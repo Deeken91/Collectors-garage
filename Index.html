@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Collector's Garage</title>
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #111;
+    color: white;
+    text-align: center;
+}
+header {
+    padding: 15px;
+    background: #1c1c1c;
+    font-size: 22px;
+    font-weight: bold;
+}
+#money {
+    font-size: 20px;
+    margin: 10px;
+    color: #4caf50;
+}
+.car {
+    background: #1e1e1e;
+    margin: 10px;
+    padding: 10px;
+    border-radius: 10px;
+}
+button {
+    padding: 8px;
+    margin: 5px;
+    border: none;
+    border-radius: 5px;
+    background: #333;
+    color: white;
+}
+button:hover {
+    background: #555;
+}
+</style>
+</head>
+<body>
+
+<header>Collector's Garage</header>
+<div id="money">$0</div>
+<div id="garage"></div>
+
+<script>
+let game = {
+    money: 10000,
+    lastUpdate: Date.now(),
+    cars: [
+        {name:"1998 Honda Civic", baseIncome:5, owned:0, turbo:0, price:5000},
+        {name:"2002 Nissan Silvia", baseIncome:15, owned:0, turbo:0, price:15000},
+        {name:"2015 BMW M3", baseIncome:50, owned:0, turbo:0, price:50000},
+        {name:"2018 Porsche 911", baseIncome:120, owned:0, turbo:0, price:120000},
+        {name:"2020 Toyota Supra", baseIncome:200, owned:0, turbo:0, price:200000},
+        {name:"2017 Mercedes C63", baseIncome:300, owned:0, turbo:0, price:300000}
+    ]
+};
+
+function saveGame() {
+    localStorage.setItem("garageGame", JSON.stringify(game));
+}
+
+function loadGame() {
+    let saved = localStorage.getItem("garageGame");
+    if(saved) {
+        game = JSON.parse(saved);
+    }
+}
+
+function formatMoney(num) {
+    return "$" + num.toFixed(0);
+}
+
+function calculateIncome() {
+    let total = 0;
+    game.cars.forEach(car => {
+        let income = car.baseIncome * car.owned * (1 + car.turbo * 0.5);
+        total += income;
+    });
+    return total;
+}
+
+function update() {
+    let now = Date.now();
+    let diff = (now - game.lastUpdate) / 1000;
+    let income = calculateIncome();
+    game.money += income * diff;
+    game.lastUpdate = now;
+    document.getElementById("money").innerText = formatMoney(game.money) + " | Income/sec: " + formatMoney(income);
+    render();
+    saveGame();
+}
+
+function buyCar(index) {
+    let car = game.cars[index];
+    if(game.money >= car.price) {
+        game.money -= car.price;
+        car.owned++;
+    }
+}
+
+function upgradeTurbo(index) {
+    let car = game.cars[index];
+    let cost = 2000 * (car.turbo + 1);
+    if(game.money >= cost && car.owned > 0) {
+        game.money -= cost;
+        car.turbo++;
+    }
+}
+
+function render() {
+    let garage = document.getElementById("garage");
+    garage.innerHTML = "";
+    game.cars.forEach((car, index) => {
+        let div = document.createElement("div");
+        div.className = "car";
+        div.innerHTML = `
+            <h3>${car.name}</h3>
+            Owned: ${car.owned}<br>
+            Turbo Level: ${car.turbo}<br>
+            Income per car: ${formatMoney(car.baseIncome * (1 + car.turbo * 0.5))}/sec<br>
+            <button onclick="buyCar(${index})">Buy (${formatMoney(car.price)})</button>
+            <button onclick="upgradeTurbo(${index})">Upgrade Turbo</button>
+        `;
+        garage.appendChild(div);
+    });
+}
+
+loadGame();
+setInterval(update, 1000);
+</script>
+
+</body>
+</html>
